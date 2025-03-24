@@ -1,0 +1,52 @@
+---
+title: "Stat4601A3-P1"
+author: "Trae Smith"
+date: "2025-03-24"
+output: html_document
+---
+
+## Load Dataset
+
+```{r loading, include=TRUE}
+dataset_name <- file.path(getwd(), "breast-cancer-wisconsin.data")
+data_names <- c("Sample code number", "Clump Thickness", "Uniformity of Cell Size", "Uniformity of Cell Shape", "Marginal Adhesion", "Single Epithelial Cell Size", "Bare Nuclei", "Bland Chromatin", "Normal Nucleoli", "Mitoses", "Class")
+
+BCWData <- read.csv(dataset_name, col.names = data_names, sep=",", stringsAsFactors=FALSE)
+```
+
+## Question 1
+
+Remove the case with missing values and change Bare.Nuclei from chr to int
+
+```{r data_update, echo=FALSE}
+updated_BCWData <- BCWData[-grep("?", BCWData$Bare.Nuclei, fixed=TRUE), ]
+
+updated_BCWData$Bare.Nuclei <- as.integer(updated_BCWData$Bare.Nuclei)
+```
+
+## Question 2
+
+Check which ones are Benign and which one is Malignant
+```{r balance_data, echo=FALSE}
+bein_data <- which(updated_BCWData$Class=="2")
+mal_data <- which(updated_BCWData$Class=="4")
+```
+
+Since Malignant tumors are less common, we will under sample ?benign? tumors to adjust for imbalance for the dataset
+
+```{r balance_data, echo=FALSE}
+#To ensure consistency
+set.seed(1234)
+nsamp <- length(mal_data)
+pick_bein <- sample(bein_data, nsamp)
+
+balanced_data <- as.data.frame(updated_BCWData[c(pick_bein,mal_data),])
+```
+
+## Question 3
+
+```{r PCA, echo=FALSE}
+cancer_PC<-prcomp(balanced_data, scale.=TRUE) #the scaled PCA 
+summary(cancer_PC)
+```
+
