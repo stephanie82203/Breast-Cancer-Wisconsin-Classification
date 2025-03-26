@@ -1,0 +1,130 @@
+---
+title: "Stat4601A3-LogisticRegression"
+author: "Stephanie Cheng"
+date: "2025-03-24"
+output: html_document
+---
+
+## Question 4 - Logistic Regression
+
+# Load related Functions/Variables
+
+Functions files are from Section 08 folder
+
+```{r Setup}
+library(MASS)
+library(class)
+library(ggplot2)
+
+load("cancer_PC.RData")
+load("BCWData_balanced.RData")
+
+source("get.train.R")
+source("example.display.R")
+source("p.hat.R")
+```
+
+# Select Principal Components for 90% Variance
+
+```{r PC_select, echo=FALSE}
+cancer_pc_summary <- summary(cancer_PC)
+cumulative_var <- cancer_pc_summary$importance[3, ]
+num_PCs <- which(cumulative_var >= 0.90)[1]
+
+cat("Number of PCs needed for 90% variance:", num_PCs, "\n")
+```
+
+Store into a dataset
+
+```{r update data, echo=FALSE}
+BCWData_pca_90perVar <- as.data.frame(predict(cancer_PC,BCWData_balanced)[, 1:num_PCs])
+
+```
+
+# Convert Class labels
+
+2 = Benign -\> 0, 4 = Malignant -\> 1
+
+```{r Class convert, echo=FALSE}
+BCWData_pca_90perVar$Class <- ifelse(BCWData_balanced$Class == "2", 0, 1)
+
+str(BCWData_pca_90perVar)
+```
+
+# Split Data to Training & Testing sets
+
+Define `%w/o%` in "get.train().R". And the define function is from "without.R" in Section 8 folder.
+
+```{r helper Define, echo=FALSE }
+"%w/o%" <- function(x,y) x[!x %in% y]
+```
+
+In machine learning, a common split for a dataset is 80% for training and 20% for testing. In other words, the split_indices is adjustable.
+
+```{r TrainTest Sets, echo=FALSE}
+set.seed(123)  
+
+split_indices <- get.train(nrow(BCWData_pca_90perVar), train.sz = round(0.8 * nrow(BCWData_pca_90perVar)))
+
+train_data <- BCWData_pca_90perVar[split_indices$train, ] 
+test_data <- BCWData_pca_90perVar[split_indices$test, ]   
+
+train_data$Class <- as.factor(train_data$Class)
+test_data$Class <- as.factor(test_data$Class)
+
+cat("Training samples:", nrow(train_data), "\n")
+cat("Test samples:", nrow(test_data), "\n")
+```
+
+# Logistic Regression Model
+
+```{r LR Model, echo=FALSE}
+log_model <- glm(Class ~ ., data = train_data, family = binomial(link = "logit"))
+
+summary(log_model)
+```
+
+# Visualizing Logistic Regression
+
+Find the best 2 PCs for Visualization (highest coeff)
+
+```{r Visualization_SetUp, echo=FALSE}
+coef_values <- abs(coef(log_model)[-1])  
+best_pcs <- names(sort(coef_values, decreasing = TRUE))[1:2]  
+
+train_pca_2D <- train_data[, c(best_pcs, "Class")]
+train_pca_2D$Class <- as.factor(train_pca_2D$Class)
+
+train_pca_2D_matrix <- as.matrix(train_pca_2D[, best_pcs])
+```
+
+Visualize using `example.display()`
+
+```{r Visualization_p1, echo=FALSE}
+model.exp <- expression(glm(Class ~ ., data = train_pca_2D, family = binomial(link = "logit")))
+predict.exp <- expression((p.hat(model, points) > 0.5) * 1)
+
+example.display(train_pca_2D_matrix, train_pca_2D$Class, {}, {},
+                c(100, 100), paste("Logistic Regression (", best_pcs[1], " vs ", best_pcs[2], ")"),
+                model.exp, predict.exp)
+```
+
+Visualize using `ggplot2`
+
+```{r Visualization_p1, echo=FALSE}
+ggplot(train_pca_2D, aes_string(x = best_pcs[1], y = best_pcs[2], color = "Class")) +
+  geom_point(alpha = 0.7, size = 3) +
+  labs(title = paste("Logistic Regression -", best_pcs[1], "vs", best_pcs[2]),
+       x = best_pcs[1], y = best_pcs[2], color = "Class") +
+  theme_minimal()
+```
+
+# Generate Predictions & Store for later Use
+
+```{r predictions, echo=FALSE}
+pred_probs <- predict(log_model, test_data, type = "response")
+predictions <- ifelse(pred_probs > 0.5, 1, 0) 
+
+predictions <- as.factor(predictions)
+save(pred_probs, predictions, file = "logistic_predictions.RData")
+```
