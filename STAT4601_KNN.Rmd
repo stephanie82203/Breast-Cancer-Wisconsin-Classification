@@ -57,6 +57,7 @@ knn_complete<-data.frame(PC1=cancer_test$PC1,
 #As examples to visualize the K-NN predication
 ggplot() +
   geom_tile(data = grid_points, aes(x = PC1, y = PC2, fill = label), alpha = 0.4) +
+  geom_contour(data = grid_points, aes(x = PC1, y = PC2, z = as.numeric(label)), color = "black", size = 0.5) +
   geom_point(data=knn_complete, aes(x = PC1, y = PC2, color = knn),size = 3) +
   labs(title = "K-NN Classification with PCA (PC1 vs PC2)",
        x = "Principal Component 1", y = "Principal Component 2",
