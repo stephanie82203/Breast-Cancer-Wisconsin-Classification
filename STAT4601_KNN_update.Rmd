@@ -1,0 +1,145 @@
+---
+title: "STAT4601_Assignment3"
+author: "Trae Smith"
+date: "2025-03-24"
+output: pdf_document
+---
+# Load related Functions/Variables
+
+Functions files are from Section 08 folder
+
+```{r Setup}
+load("cancer_PC.RData")
+load("BCWData_balanced.RData")
+
+sapply(list.files(as.character(here("functions")),
+                  pattern = "*.R",
+                  full.names = TRUE,
+                  ignore.case = TRUE),
+       source,
+       .GlobalEnv)
+```
+
+## Question 4 - Knn Model 
+```{r KNN}
+library(class)
+library(ggplot2)
+
+pca_data<-as.data.frame(cancer_PC$x[, 1:7]) #the data frame of the PCA from 1 to 7 (which is the 90% variablity)
+classes<-BCWData_balanced$Class #The 2 classes, benign or malignant
+pca_com<-as.data.frame(cancer_PC$x[, 1:7])
+pca_com$label<-classes
+
+set.seed(1234) #to ensure consistency
+size<-floor(0.8*nrow(pca_data)) #382 observations in the training sample while 96 in the testing sample
+
+#splitting the data into a testing and training sample
+train_sample<-sample(seq_len(nrow(pca_data)),size=size)
+#training data
+cancer_train<-pca_data[train_sample,]
+train_class<-classes[train_sample]
+#testing data
+cancer_test<-pca_data[-train_sample,]
+test_class<-classes[-train_sample]
+
+#K-NN with the training sample as train, testing sample as test, the classes as cl, and k=19 (high enough compared to the training sample)
+cancer_knn <- knn(train = cancer_train, test = cancer_test, cl=train_class, k = 19, prob = TRUE)
+#This will show how much K-NN predicted in benign (2) or malignant (4)
+summary(cancer_knn)
+
+
+x_seq <- seq(min(pca_data$PC1) - 1, max(pca_data$PC1) + 1, length.out = 200)
+y_seq <- seq(min(pca_data$PC2) - 1, max(pca_data$PC2) + 1, length.out = 200)
+grid_points <- expand.grid(PC1 = x_seq, PC2 = y_seq)
+
+# Predict K-NN labels on the grid for decision boundaries
+grid_knn <- knn(train = cancer_train[, c("PC1", "PC2")], 
+                test = grid_points, cl = train_class, k = 19)
+grid_points$label <- as.factor(grid_knn)  # Convert to factor for discrete coloring
+
+
+#This is to help visualize the predicted K-NN with respect to the PCs
+knn_complete<-data.frame(PC1=cancer_test$PC1,
+                            PC2=cancer_test$PC2,
+                            PC3=cancer_test$PC3,
+                            PC4=cancer_test$PC4,
+                            PC5=cancer_test$PC5,
+                            PC6=cancer_test$PC6,
+                            PC7=cancer_test$PC7,
+                            knn=cancer_knn)
+
+#As examples to visualize the K-NN predication
+ggplot() +
+  geom_tile(data = grid_points, aes(x = PC1, y = PC2, fill = label), alpha = 0.4) +
+  geom_contour(data = grid_points, aes(x = PC1, y = PC2, z = as.numeric(label)), color = "black", size = 0.5) +
+  geom_point(data=knn_complete, aes(x = PC1, y = PC2, color = knn),size = 3) +
+  labs(title = "K-NN Classification with PCA (PC1 vs PC2)",
+       x = "Principal Component 1", y = "Principal Component 2",
+       fill = "K-NN Prediction (Boundary)",
+       color = "K-NN Prediction (Points)") +
+  scale_fill_manual(values = c("lightblue", "pink")) +  # Decision boundary colors
+  scale_color_manual(values = c("blue", "red")) +  
+  theme_minimal()+
+  coord_cartesian(xlim = c(-3, 6), ylim = c(-3,3))
+
+```
+
+## Question 5 - Confusion Matrix 
+```{r Confusion Matrix}
+library(caret)
+
+confusion_matrix <- table(Predicted = cancer_knn, Actual = test_class)
+print(confusion_matrix)
+```
+
+## Question 6 - Classification Quality
+
+Extract value from the confusion matrix
+```{r Extract value, echo=FALSE}
+TP <- confusion_matrix[2, 2]
+TN <- confusion_matrix[1, 1]
+FP <- confusion_matrix[2, 1]
+FN <- confusion_matrix[1, 2]
+
+cat("True positive :", TP, "\n")
+cat("True negative :", TN, "\n")
+cat("False positive :", FP, "\n")
+cat("False negative :", FN, "\n")
+```
+
+Calculate the performances
+```{r Performance Calculation, echo=FALSE}
+accuracy <- (TP + TN) / (TP + FP + FN + TN)
+recall <- TP / (TP + FN)
+specificity <- TN / (FP + TN)
+precision <- TP / (TP + FP)
+f1_score <- (2 * TP) / (2 * TP + FP + FN)
+```
+
+Calculate the AUC
+Reference: https://www.geeksforgeeks.org/plotting-roc-curve-in-r-programming/ 
+```{r AUC Calculation, echo=FALSE}
+library(pROC)
+
+# Only probability can calculate AUC
+knn_probs <- attr(cancer_knn, "prob")
+knn_probs <- ifelse(cancer_knn == "Malignant", knn_probs, 1 - knn_probs)
+
+roc_curve <- roc(test_class, knn_probs)
+plot(roc_curve, col = "blue", main = "ROC Curve", print.auc = TRUE)
+abline(a = 0, b = 1, lty = 2, col = "red")
+
+auc <- as.numeric(roc_curve$auc)
+```
+
+Display Performance Result
+```{r Performance Output}
+cat("Knn Model Performance Metrics\n")
+cat("---------------------------\n")
+cat("Accuracy:", round(accuracy, 4), "\n")
+cat("Recall:", round(recall, 4), "\n")
+cat("Specificity:", round(specificity, 4), "\n")
+cat("Precision:", round(precision, 4), "\n")
+cat("F1 Score:", round(f1_score, 4), "\n")
+cat("AUC:", round(auc, 4), "\n")
+```
