@@ -74,7 +74,7 @@ ggplot() +
   geom_contour(data = grid_points, aes(x = PC1, y = PC2, z = as.numeric(label)), color = "black", size = 0.5) +
   geom_point(data=knn_complete, aes(x = PC1, y = PC2, color = knn),size = 3) +
   labs(title = "K-NN Classification with PCA (PC1 vs PC2)",
-       x = "Principal Component 1", y = "Principal Component 2",
+       x = "Clump Thickness", y = "Uniformity of Cell Size",
        fill = "K-NN Prediction (Boundary)",
        color = "K-NN Prediction (Points)") +
   scale_fill_manual(values = c("lightblue", "pink")) +  # Decision boundary colors
