@@ -8,6 +8,7 @@ output: html_document
 ## Load Dataset
 
 ```{r loading, include=TRUE}
+library(writexl)
 dataset_name <- file.path(getwd(), "breast-cancer-wisconsin.data")
 data_names <- c("Sample code number", "Clump Thickness", "Uniformity of Cell Size", "Uniformity of Cell Shape", "Marginal Adhesion", "Single Epithelial Cell Size", "Bare Nuclei", "Bland Chromatin", "Normal Nucleoli", "Mitoses", "Class")
 
@@ -48,6 +49,13 @@ BCWData_balanced <- as.data.frame(updated_BCWData[c(pick_bein,mal_data),])
 ```{r PCA, echo=FALSE}
 cancer_PC<-prcomp(BCWData_balanced, scale.=TRUE) #the scaled PCA 
 summary(cancer_PC)
+```
+
+## Exporting Original dataset, dataset without missing variables, and dataset undersampled
+```{r Dataset to Excel}
+write_xlsx(BCWData, "original_BWCdata.xlsx")
+write_xlsx(updated_BCWData, "BWCData_wo_missing.xlsx")
+write_xlsx(BCWData_balanced, "BWCData_undersampled.xlsx")
 ```
 
 ## Export Variable
