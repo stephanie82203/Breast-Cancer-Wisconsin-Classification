@@ -28,7 +28,7 @@ train_class<-classes[train_sample]
 cancer_test<-pca_data[-train_sample,]
 test_class<-classes[-train_sample]
 
-#K-NN with the training sample as train, testing sample as test, the classes as cl, and k=19 (high enough compared to the training sample)
+#Overall K-NN with the training sample as train, testing sample as test, the classes as cl, and k=19 (high enough compared to the training sample)
 cancer_knn <- knn(train = cancer_train, test = cancer_test, cl=train_class, k = 19)
 #This will show how much K-NN predicted in benign (2) or malignant (4)
 summary(cancer_knn)
@@ -38,7 +38,7 @@ x_seq <- seq(min(pca_data$PC1) - 1, max(pca_data$PC1) + 1, length.out = 200)
 y_seq <- seq(min(pca_data$PC2) - 1, max(pca_data$PC2) + 1, length.out = 200)
 grid_points <- expand.grid(PC1 = x_seq, PC2 = y_seq)
 
-# Predict K-NN labels on the grid for decision boundaries
+# This is to help visualize the code. For simplicity, we will use PC1 and PC2
 grid_knn <- knn(train = cancer_train[, c("PC1", "PC2")], 
                 test = grid_points, cl = train_class, k = 19)
 grid_points$label <- as.factor(grid_knn)  # Convert to factor for discrete coloring
