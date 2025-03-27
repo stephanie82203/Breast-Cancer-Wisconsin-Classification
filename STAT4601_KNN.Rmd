@@ -68,5 +68,8 @@ ggplot() +
   theme_minimal()+
   coord_cartesian(xlim = c(-3, 6), ylim = c(-3,3))
 
+#save the KNN classificiation for later use
+save(knn_complete, file="KNN_complete.RData")
+
 ```
 
