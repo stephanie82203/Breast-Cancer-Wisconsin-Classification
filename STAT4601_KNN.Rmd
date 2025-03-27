@@ -4,7 +4,7 @@ author: "Trae Smith"
 date: "2025-03-24"
 output: pdf_document
 ---
-
+#Question 4-KNN
 ```{r KNN}
 library(class)
 library(ggplot2)
