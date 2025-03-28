@@ -1,6 +1,6 @@
 ---
 title: "Stat4601A3-P1"
-author: "Trae Smith"
+author: "David Wu"
 date: "2025-03-24"
 output: html_document
 ---
