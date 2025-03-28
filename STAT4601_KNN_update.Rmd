@@ -47,13 +47,13 @@ cancer_knn <- knn(train = cancer_train, test = cancer_test, cl=train_class, k = 
 #This will show how much K-NN predicted in benign (2) or malignant (4)
 summary(cancer_knn)
 
-
+#As examples to visualize the K-NN predication
 x_seq <- seq(min(pca_data$PC1) - 1, max(pca_data$PC1) + 1, length.out = 200)
-y_seq <- seq(min(pca_data$PC2) - 1, max(pca_data$PC2) + 1, length.out = 200)
-grid_points <- expand.grid(PC1 = x_seq, PC2 = y_seq)
+y_seq <- seq(min(pca_data$PC4) - 1, max(pca_data$PC4) + 1, length.out = 200)
+grid_points <- expand.grid(PC1 = x_seq, PC4 = y_seq)
 
 # Predict K-NN labels on the grid for decision boundaries
-grid_knn <- knn(train = cancer_train[, c("PC1", "PC2")], 
+grid_knn <- knn(train = cancer_train[, c("PC1", "PC4")], 
                 test = grid_points, cl = train_class, k = 19)
 grid_points$label <- as.factor(grid_knn)  # Convert to factor for discrete coloring
 
@@ -70,17 +70,17 @@ knn_complete<-data.frame(PC1=cancer_test$PC1,
 
 #As examples to visualize the K-NN predication
 ggplot() +
-  geom_tile(data = grid_points, aes(x = PC1, y = PC2, fill = label), alpha = 0.4) +
-  geom_contour(data = grid_points, aes(x = PC1, y = PC2, z = as.numeric(label)), color = "black", size = 0.5) +
-  geom_point(data=knn_complete, aes(x = PC1, y = PC2, color = knn),size = 3) +
-  labs(title = "K-NN Classification with PCA (PC1 vs PC2)",
-       x = "Clump Thickness", y = "Uniformity of Cell Size",
+  geom_tile(data = grid_points, aes(x = PC1, y = PC4, fill = label), alpha = 0.4) +
+  geom_contour(data = grid_points, aes(x = PC1, y = PC4, z = as.numeric(label)), color = "black", size = 0.5) +
+  geom_point(data=knn_complete, aes(x = PC1, y = PC4, color = knn),size = 3) +
+  labs(title = "K-NN Classification with PCA (PC1 vs PC4)",
+       x = "Clump Thickness", y = "Marginal Adhesione",
        fill = "K-NN Prediction (Boundary)",
        color = "K-NN Prediction (Points)") +
   scale_fill_manual(values = c("lightblue", "pink")) +  # Decision boundary colors
   scale_color_manual(values = c("blue", "red")) +  
-  theme_minimal()+
-  coord_cartesian(xlim = c(-3, 6), ylim = c(-3,3))
+  theme_minimal()
+ 
 
 ```
 
